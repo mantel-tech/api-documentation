@@ -1,10 +1,9 @@
-
 {
   "openapi": "3.0.0",
   "info": {
     "title": "Mantel API",
-    "description": "Unified API for Product and Order management. Adheres to ISO standards and UTC time synchronization. Versioning is handled per endpoint.",
-    "version": "1.0.0"
+    "description": "Unified API for Product, Order and Purchase Order management. Adheres to ISO standards and UTC time synchronization. Versioning is handled per endpoint.",
+    "version": "1.1.0"
   },
   "servers": [
     { "url": "https://api.mantel.dev/api", "description": "Test Environment" },
@@ -33,6 +32,18 @@
           "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderRequest" } } }
         },
         "responses": { "201": { "description": "Order placed successfully" } }
+      }
+    },
+    "/purchase-orders/v1": {
+      "post": {
+        "summary": "Create or Update Purchase Order",
+        "tags": ["Purchase Orders"],
+        "parameters": [{ "$ref": "#/components/parameters/ApiKeyHeader" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PurchaseOrderRequest" } } }
+        },
+        "responses": { "201": { "description": "Purchase order processed successfully" } }
       }
     }
   },
@@ -79,17 +90,17 @@
         "required": ["order_number", "datetime", "currency_code", "customer", "addresses", "order_lines"],
         "properties": {
           "order_number": { "type": "string", "example": "ORD-2026-MANTEL-01" },
-          "datetime": { 
-            "type": "string", 
+          "datetime": {
+            "type": "string",
             "format": "date-time",
-            "description": "Timestamp in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time) formatted according to [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).", 
-            "example": "2026-03-18T10:00:00Z" 
+            "description": "Timestamp in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time) formatted according to [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).",
+            "example": "2026-03-18T10:00:00Z"
           },
-          "currency_code": { 
-            "type": "string", 
+          "currency_code": {
+            "type": "string",
             "description": "Three-letter currency code according to [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217).",
-            "enum": ["CHF", "CZK", "DKK", "EUR", "GBP", "NOK", "PLN", "SEK"], 
-            "example": "EUR" 
+            "enum": ["CHF", "CZK", "DKK", "EUR", "GBP", "NOK", "PLN", "SEK"],
+            "example": "EUR"
           },
           "customer": { "$ref": "#/components/schemas/CustomerDetails" },
           "addresses": {
@@ -105,14 +116,64 @@
           }
         }
       },
+      "PurchaseOrderRequest": {
+        "type": "object",
+        "required": ["purchase_order_number", "purchase_order_lines"],
+        "properties": {
+          "purchase_order_number": {
+            "type": "string",
+            "description": "Mantel's own purchase order number. Treated as a string; leading zeros are significant.",
+            "example": "0511044"
+          },
+          "supplier_purchase_order_number": {
+            "type": "string",
+            "description": "Purchase order reference as assigned by the supplier.",
+            "example": "SUP-PO-2026-0042"
+          },
+          "supplier_registration_number": {
+            "type": "string",
+            "description": "Chamber of commerce registration number of the supplier.",
+            "example": "30123456"
+          },
+          "purchase_order_lines": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PurchaseOrderLine" }
+          }
+        }
+      },
+      "PurchaseOrderLine": {
+        "type": "object",
+        "required": ["product_number", "quantity"],
+        "properties": {
+          "supplier_purchase_order_line_number": {
+            "type": "string",
+            "description": "Line reference as assigned by the supplier.",
+            "example": "10"
+          },
+          "product_number": { "type": "string", "example": "WPP012A001ZA004" },
+          "quantity": { "type": "integer", "example": 1 },
+          "purchase_price": {
+            "type": "number",
+            "format": "float",
+            "description": "Purchase price of a single unit. Uses float formatting.",
+            "example": 54.75
+          },
+          "expected_delivery_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Expected delivery date formatted according to [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).",
+            "example": "2026-04-15"
+          }
+        }
+      },
       "CustomerDetails": {
         "type": "object",
         "properties": {
-          "language_code": { 
-            "type": "string", 
+          "language_code": {
+            "type": "string",
             "description": "Two-letter language code according to [ISO 639-1](https://en.wikipedia.org/wiki/ISO_639-1).",
-            "enum": ["da", "de", "en", "es", "fr", "it", "nl", "sv"], 
-            "example": "nl" 
+            "enum": ["da", "de", "en", "es", "fr", "it", "nl", "sv"],
+            "example": "nl"
           },
           "first_name": { "type": "string", "example": "Adriaan" },
           "last_name": { "type": "string", "example": "de Vries" },
@@ -128,11 +189,11 @@
           "house_number_addition": { "type": "string", "example": "bis" },
           "zipcode": { "type": "string", "example": "3526KS" },
           "city": { "type": "string", "example": "Utrecht" },
-          "country_code": { 
-            "type": "string", 
+          "country_code": {
+            "type": "string",
             "description": "Two-letter country code according to [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).",
-            "enum": ["AL", "AT", "BA", "BD", "BE", "BG", "CA", "CH", "CN", "CR", "CZ", "DE", "DK", "ES", "FI", "FR", "GB", "HK", "HU", "ID", "IE", "IL", "IN", "IT", "JP", "KH", "KR", "LK", "LT", "LU", "ME", "MO", "MY", "NL", "PH", "PK", "PL", "PT", "RO", "RS", "SE", "SG", "SK", "SV", "TH", "TN", "TR", "TW", "US", "VN", "ZA"], 
-            "example": "NL" 
+            "enum": ["AL", "AT", "BA", "BD", "BE", "BG", "CA", "CH", "CN", "CR", "CZ", "DE", "DK", "ES", "FI", "FR", "GB", "HK", "HU", "ID", "IE", "IL", "IN", "IT", "JP", "KH", "KR", "LK", "LT", "LU", "ME", "MO", "MY", "NL", "PH", "PK", "PL", "PT", "RO", "RS", "SE", "SG", "SK", "SV", "TH", "TN", "TR", "TW", "US", "VN", "ZA"],
+            "example": "NL"
           }
         }
       },
@@ -142,11 +203,11 @@
           "product_number": { "type": "string", "example": "WPP012A001ZA004" },
           "name": { "type": "string", "example": "Product WPP-012A" },
           "quantity": { "type": "integer", "example": 1 },
-          "price": { 
-            "type": "number", 
-            "format": "float", 
+          "price": {
+            "type": "number",
+            "format": "float",
             "description": "Price of a single unit. Uses float formatting.",
-            "example": 89.50 
+            "example": 89.50
           },
           "vat_percentage": { "type": "integer", "example": 21 }
         }
@@ -154,25 +215,25 @@
       "MeasurementDetails": {
         "type": "object",
         "properties": {
-          "length": { 
-            "type": "integer", 
+          "length": {
+            "type": "integer",
             "description": "Length in millimeters (mm).",
-            "example": 622 
+            "example": 622
           },
-          "width": { 
-            "type": "integer", 
+          "width": {
+            "type": "integer",
             "description": "Width in millimeters (mm).",
-            "example": 25 
+            "example": 25
           },
-          "height": { 
-            "type": "integer", 
+          "height": {
+            "type": "integer",
             "description": "Height in millimeters (mm).",
-            "example": 622 
+            "example": 622
           },
-          "weight": { 
-            "type": "integer", 
+          "weight": {
+            "type": "integer",
             "description": "Weight in grams (g).",
-            "example": 1560 
+            "example": 1560
           }
         }
       }
